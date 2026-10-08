@@ -56,3 +56,19 @@ console.log(observed.status, observed.ledger);
 ```
 
 The result verifies **chain inclusion only**. It does not prove private-payment anonymity, bank payout or token redemption; older hashes may be unavailable from RPC retention. The SDK has offline tests for URL restrictions, malformed hashes, missing transactions and safe read-only behavior. See [the engineering roadmap](ROADMAP.md).
+
+## Exact-value asset operations
+
+```ts
+import { AssetAmount } from "@stealthbridge/sdk";
+const verifiedAsset = {
+  network: "testnet", kind: "soroban-token",
+  identifier: assetIdFromYourVerifiedConfiguration,
+  decimals: decimalsFromYourVerifiedContract
+} as const;
+const amount = AssetAmount.parse(verifiedAsset, valueEnteredAsDecimalString);
+const total = amount.add(otherAmountOfSameAsset);
+console.log(total.format(), total.minorUnits.toString());
+```
+
+This is a *pure amount utility*, not a conversion rate or transfer feature. It rejects floating-point inputs, ambiguous decimal strings, unsupported precision, negative values and cross-asset operations. Asset identity/decimals **must be verified from real chain/issuer metadata**; never assume precision or trusted issuer from this helper. Bigints serialize explicitly to minor-unit strings.

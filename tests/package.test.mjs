@@ -13,6 +13,8 @@ const fixtures = path.join(root, "tests", "fixtures");
 const artifacts = path.join(root, "artifacts");
 const expectedPackageFiles = [
   "README.md",
+  "dist/amount.d.ts",
+  "dist/amount.js",
   "dist/client.d.ts",
   "dist/client.js",
   "dist/index.d.ts",
@@ -22,8 +24,8 @@ const expectedPackageFiles = [
   "package.json"
 ];
 const budgets = {
-  packedBytes: 12_000,
-  unpackedBytes: 30_000,
+  packedBytes: 22_000,
+  unpackedBytes: 53_000,
   fullBrowserBytes: 3_000,
   treeShakenBrowserBytes: 1_000,
   nextClientSdkChunksBytes: 25_000
