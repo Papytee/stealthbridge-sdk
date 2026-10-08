@@ -76,3 +76,9 @@ This is a *pure amount utility*, not a conversion rate or transfer feature. It r
 ## Verified contract manifest parsing
 
 Use `parseDeploymentManifest(input)` and `getVerifiedContract(manifest,name)` to prevent accidental use of unconfirmed or non-Testnet contract identifiers. Current actual manifest is explicitly `not-deployed` and must **not** be represented as a functioning protocol. This parser checks format and required evidence fields; it does **not** independently prove an on-chain deployment or attest to a token issuer. See `src/manifest.ts`.
+
+## Resilient read-only client
+
+The SDK now validates actual response schemas for network identity, corridors, capabilities, health and transaction observations before returning them. Responses that are malformed, oversized or incompatible with Stellar Testnet fail closed with `ApiError(502,path)`; no synthetic results are returned.
+
+Set `timeoutMs` between 100 and 60000 milliseconds (10 seconds by default) and pass `{signal:AbortSignal}` to any read. Requests use `AbortSignal.any()` for cancellation and timeout. **No money-moving method is exposed, and retries are not performed.** Upstream rate limits/5xx remain explicit errors requiring operator review.

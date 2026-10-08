@@ -28,8 +28,8 @@ const expectedPackageFiles = [
 const budgets = {
   packedBytes: 28_000,
   unpackedBytes: 68_000,
-  fullBrowserBytes: 3_000,
-  treeShakenBrowserBytes: 1_000,
+  fullBrowserBytes: 9_000,
+  treeShakenBrowserBytes: 1_600,
   nextClientSdkChunksBytes: 25_000
 };
 const forbiddenModulePattern = /^(?:node:|fs(?:\/|$)|crypto(?:\/|$)|path(?:\/|$)|child_process(?:\/|$)|worker_threads(?:\/|$)|net(?:\/|$)|tls(?:\/|$))/;

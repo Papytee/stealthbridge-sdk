@@ -37,3 +37,7 @@ The backend also includes a tenant-scoped internal intent journal (`src/store.rs
 ### Contract artifact resolution
 
 Only schema version 1 and `network=testnet` are recognized. The current contracts manifest declares `not-deployed`. Only explicitly verified, deployment-shaped manifests can resolve a contract name. This local validation is not independent network attestation; consumers must still verify contract IDs, code hashes and source provenance against Stellar.
+
+### Read-only transport invariants
+
+Every SDK read has a bounded timeout, optional caller AbortSignal, maximum JSON response size, and runtime shape validation. The Testnet passphrase is verified in the client response, in addition to the backend RPC check. Unsupported data is rejected as an API protocol error, not converted into a payment success state. Cross-platform tests use native fetch and `AbortSignal.any` (Node.js 22+ / modern browsers).
