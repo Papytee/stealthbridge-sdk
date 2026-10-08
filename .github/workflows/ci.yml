@@ -11,5 +11,8 @@ jobs:
         with:
           node-version: "22"
           cache: npm
+          cache-dependency-path: |
+            package-lock.json
+            tests/fixtures/next-app/package-lock.json
       - run: npm ci --no-audit --no-fund
       - run: npm run verify

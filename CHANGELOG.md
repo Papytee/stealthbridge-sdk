@@ -7,6 +7,7 @@ Notable user-visible SDK changes are recorded here. Versions follow [Semantic Ve
 ### Added
 
 - Tarball integrity, Node.js 22 ESM, TypeScript declaration, browser bundle safety, and tree-shaking checks using isolated consumers.
+- A pinned Next.js 16.4 App Router production-build fixture covering SDK imports from Server and Client Components.
 - Documented root exports, runtime compatibility, consumer errors, size budgets, and the release workflow.
 
 ### Changed

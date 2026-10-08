@@ -26,7 +26,7 @@ See [compatibility matrix](specs/COMPATIBILITY.md), the [backend API](https://gi
 The only public package entry point is `@stealthbridge/sdk`. It is native ESM and exports the runtime values `StealthBridgeClient` and `ApiError`, plus the TypeScript types `ClientConfig`, `Network`, `PrivacyRail`, `SettlementState`, `Capabilities`, `NetworkStatus`, `Corridor`, `SettlementSummary`, and `TransactionObservation`. Internal `dist/*` paths are not public exports.
 
 - Node.js: 22 or newer, ESM only. CommonJS `require()` is not supported.
-- Browsers: ES2022 with built-in `fetch`, `Response`, and `URL`, using a bundler that understands package `exports`. CI verifies this with esbuild.
+- Browsers: ES2022 with built-in `fetch`, `Response`, and `URL`, using a bundler that understands package `exports`. CI verifies this with esbuild and a pinned Next.js 16.4 App Router production build.
 - TypeScript: declarations are generated beside the ESM output and resolved through the `types` export condition.
 - Network: Stellar Testnet only. Browser calls are still subject to the backend's CORS policy.
 
@@ -37,9 +37,9 @@ npm ci
 npm run verify
 ```
 
-`npm run verify` type-checks and builds the source, creates `artifacts/stealthbridge-sdk-0.2.0.tgz`, validates its SHA-1/SHA-512 integrity metadata and contents, then installs that tarball into isolated Node.js, TypeScript, and browser fixtures. It does not need a backend, wallet, credentials, or network access after dependencies are installed.
+`npm run verify` type-checks and builds the source, creates `artifacts/stealthbridge-sdk-0.2.0.tgz`, validates SHA-256 plus npm's SHA-1/SHA-512 integrity metadata and contents, then installs that tarball into isolated Node.js, TypeScript, esbuild, and Next.js fixtures. The Next.js fixture proves the installed `dist/index.js` entry resolves in both a Server Component and a `"use client"` Client Component. It does not need a backend, wallet, credentials, or deployment. The fixture's pinned dependencies require registry access on a cold cache.
 
-The measured baseline is 4,168 B packed / 9,995 B unpacked, a 1,189 B full minified browser ESM bundle, and a 233 B `ApiError`-only bundle. CI ceilings allow deliberate headroom: 12,000 B packed, 30,000 B unpacked, 3,000 B full browser, and 1,000 B tree-shaken. A size change that exceeds a ceiling requires review and an explicit budget update with fresh measurements.
+The measured baseline is approximately 4.4 KB packed / 10.5 KB unpacked, with a 1,189 B full minified browser ESM bundle, a 233 B `ApiError`-only bundle, and 1,452 B across the Next.js client chunks containing SDK code. CI ceilings allow deliberate headroom: 12,000 B packed, 30,000 B unpacked, 3,000 B full browser, 1,000 B tree-shaken, and 25,000 B for SDK-bearing Next.js client chunks. The Next.js fixture adds about 12.4 seconds locally on a warm dependency cache (6.0 seconds install and 6.4 seconds build). A size change that exceeds a ceiling requires review and an explicit budget update with fresh measurements.
 
 ## Consumer errors
 

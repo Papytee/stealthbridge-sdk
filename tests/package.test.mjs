@@ -1,7 +1,7 @@
 import { after, before, describe, test } from "node:test";
 import assert from "node:assert/strict";
-import { createHash } from "node:crypto";
-import { cp, mkdir, mkdtemp, readFile, rm } from "node:fs/promises";
+import { createHash, webcrypto } from "node:crypto";
+import { cp, mkdir, mkdtemp, readFile, readdir, rm, stat } from "node:fs/promises";
 import { tmpdir } from "node:os";
 import path from "node:path";
 import { fileURLToPath } from "node:url";
@@ -25,20 +25,30 @@ const budgets = {
   packedBytes: 12_000,
   unpackedBytes: 30_000,
   fullBrowserBytes: 3_000,
-  treeShakenBrowserBytes: 1_000
+  treeShakenBrowserBytes: 1_000,
+  nextClientSdkChunksBytes: 25_000
 };
 const forbiddenModulePattern = /^(?:node:|fs(?:\/|$)|crypto(?:\/|$)|path(?:\/|$)|child_process(?:\/|$)|worker_threads(?:\/|$)|net(?:\/|$)|tls(?:\/|$))/;
-const secretMaterialPattern = /\b(?:privateKey|secretKey|mnemonic|seedPhrase|walletSecret)\b/i;
+const secretMaterialPattern = /\b(?:privateKey|secretKey|mnemonic|seedPhrase|recoveryPhrase|walletSecret)\b/i;
 
 let workspace;
 let packed;
 let tarball;
+let nextConsumer;
+let nextBuildOutput;
+let nextInstallMilliseconds;
+let nextBuildMilliseconds;
 
 function run(command, args, cwd = root) {
   const result = spawnSync(command, args, {
     cwd,
     encoding: "utf8",
-    env: { ...process.env, NO_COLOR: "1" }
+    env: {
+      ...process.env,
+      CI: "1",
+      NEXT_TELEMETRY_DISABLED: "1",
+      NO_COLOR: "1"
+    }
   });
   if (result.status !== 0) {
     throw new Error(
@@ -62,6 +72,27 @@ async function installFixture(name) {
     tarball
   ], destination);
   return destination;
+}
+
+async function installNextFixture() {
+  const destination = path.join(workspace, "next-app");
+  await cp(path.join(fixtures, "next-app"), destination, { recursive: true });
+  const vendor = path.join(destination, "vendor");
+  await mkdir(vendor);
+  await cp(tarball, path.join(vendor, "stealthbridge-sdk.tgz"));
+  const startedAt = performance.now();
+  run("npm", ["ci", "--no-audit", "--no-fund"], destination);
+  nextInstallMilliseconds = Math.round(performance.now() - startedAt);
+  return destination;
+}
+
+async function listFiles(directory) {
+  const entries = await readdir(directory, { withFileTypes: true });
+  const nested = await Promise.all(entries.map(async (entry) => {
+    const entryPath = path.join(directory, entry.name);
+    return entry.isDirectory() ? listFiles(entryPath) : [entryPath];
+  }));
+  return nested.flat();
 }
 
 async function browserBuild(entryPoint) {
@@ -131,16 +162,22 @@ describe("published package contract", { concurrency: false }, () => {
   test("packs only intended files with verifiable integrity and size budgets", async (context) => {
     assert.deepEqual(packed.files.map(({ path: filePath }) => filePath).sort(), expectedPackageFiles);
     const archive = await readFile(tarball);
+    const sha256 = createHash("sha256").update(archive).digest("hex");
+    const independentSha256 = Buffer.from(
+      await webcrypto.subtle.digest("SHA-256", archive)
+    ).toString("hex");
     const integrity = `sha512-${createHash("sha512").update(archive).digest("base64")}`;
     const shasum = createHash("sha1").update(archive).digest("hex");
     assert.equal(packed.integrity, integrity);
     assert.equal(packed.shasum, shasum);
+    assert.equal(sha256, independentSha256);
     assert.ok(packed.size <= budgets.packedBytes, `${packed.size} exceeds ${budgets.packedBytes}`);
     assert.ok(
       packed.unpackedSize <= budgets.unpackedBytes,
       `${packed.unpackedSize} exceeds ${budgets.unpackedBytes}`
     );
     context.diagnostic(`tarball ${packed.filename}: ${packed.size} B packed, ${packed.unpackedSize} B unpacked`);
+    context.diagnostic(`tarball SHA-256: ${sha256}`);
   });
 
   test("installs the tarball and resolves the public API in Node.js ESM", async (context) => {
@@ -178,5 +215,69 @@ describe("published package contract", { concurrency: false }, () => {
     assert.ok(shaken.bytes < full.bytes / 2, `${shaken.bytes} is not less than half of ${full.bytes}`);
     assert.doesNotMatch(shaken.text, /StealthBridgeClient|\/v1\/|\/health/);
     context.diagnostic(`ApiError-only bundle: ${shaken.bytes} B (${full.bytes} B full)`);
+  });
+
+  test("builds an isolated Next.js App Router consumer from the tarball", async (context) => {
+    nextConsumer = await installNextFixture();
+    const resolution = run(process.execPath, ["verify-install.mjs"], nextConsumer);
+    assert.match(resolution, /node_modules.*@stealthbridge.*sdk.*dist.*index\.js/);
+
+    const startedAt = performance.now();
+    nextBuildOutput = run("npm", ["run", "build"], nextConsumer);
+    nextBuildMilliseconds = Math.round(performance.now() - startedAt);
+    assert.match(nextBuildOutput, /Creating an optimized production build|Compiled successfully/);
+    assert.match(nextBuildOutput, /\s\/\s/);
+    assert.ok((await readFile(path.join(nextConsumer, ".next", "BUILD_ID"), "utf8")).trim());
+    context.diagnostic(resolution);
+    context.diagnostic(
+      `Next.js fixture: npm ci ${nextInstallMilliseconds} ms, production build ${nextBuildMilliseconds} ms`
+    );
+  });
+
+  test("compiles SDK imports in a Next.js Server Component", async () => {
+    const serverFiles = await listFiles(path.join(nextConsumer, ".next", "server"));
+    const serverOutput = await Promise.all(
+      serverFiles.map(async (filePath) => [filePath, await readFile(filePath, "utf8")])
+    );
+    assert.ok(
+      serverOutput.some(([, contents]) => contents.includes("server-import-ok")),
+      "built server output must contain the Server Component SDK marker"
+    );
+  });
+
+  test("keeps the SDK import browser-safe in a Next.js Client Component", async (context) => {
+    const staticFiles = (await listFiles(path.join(nextConsumer, ".next", "static", "chunks")))
+      .filter((filePath) => filePath.endsWith(".js"));
+    const chunks = await Promise.all(staticFiles.map(async (filePath) => ({
+      filePath,
+      contents: await readFile(filePath, "utf8"),
+      size: (await stat(filePath)).size
+    })));
+    const sdkChunks = chunks.filter(({ contents }) =>
+      contents.includes("client-import-ok") || contents.includes("StealthBridge API returned HTTP")
+    );
+    assert.ok(
+      sdkChunks.some(({ contents }) => contents.includes("client-import-ok")),
+      "built client chunks must contain the Client Component SDK marker"
+    );
+    assert.ok(
+      sdkChunks.some(({ contents }) => contents.includes("StealthBridge API returned HTTP")),
+      "built client chunks must include the SDK runtime imported through the package entry"
+    );
+
+    const combined = sdkChunks.map(({ contents }) => contents).join("\n");
+    const combinedBytes = sdkChunks.reduce((total, { size }) => total + size, 0);
+    assert.doesNotMatch(
+      combined,
+      /(?:node:(?:fs|crypto|path|child_process|worker_threads|net|tls)|(?:require|import)\(["'](?:fs|crypto|path|child_process|worker_threads|net|tls)["']\))/
+    );
+    assert.doesNotMatch(combined, secretMaterialPattern);
+    assert.ok(
+      combinedBytes <= budgets.nextClientSdkChunksBytes,
+      `${combinedBytes} exceeds ${budgets.nextClientSdkChunksBytes}`
+    );
+    context.diagnostic(
+      `Next.js SDK client chunks: ${sdkChunks.length} file(s), ${combinedBytes} B combined`
+    );
   });
 });
