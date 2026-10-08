@@ -1,4 +1,4 @@
-# StealthBridge integration compatibility — v0.2
+# StealthBridge integration compatibility — v0.3
 
 | Component | Interface | Status |
 | --- | --- | --- |
