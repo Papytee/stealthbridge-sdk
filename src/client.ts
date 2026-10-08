@@ -1,4 +1,4 @@
-import type { Capabilities, Corridor, Network, NetworkStatus } from "./types.js";
+import type { Capabilities, Corridor, Network, NetworkStatus, TransactionObservation } from "./types.js";
 export interface ClientConfig {
   apiBaseUrl: string;
   network: Network;
@@ -34,5 +34,14 @@ export class StealthBridgeClient {
   network(): Promise<NetworkStatus> {return this.read("/v1/network");}
   capabilities(): Promise<Capabilities> {return this.read("/v1/capabilities");}
   corridors(): Promise<Corridor[]> {return this.read("/v1/corridors");}
+  /**
+   * Inspect public ledger inclusion by an exact 64-character hex hash.
+   * NOT_FOUND is an API 404, including for transactions outside RPC retention.
+   * Never returns raw XDR, sender/receiver or confidential witnesses.
+   */
+  transaction(hash: string): Promise<TransactionObservation> {
+    if (!/^[a-f0-9]{64}$/i.test(hash)) throw new TypeError("Transaction hash must be exactly 64 hexadecimal characters");
+    return this.read("/v1/transactions/" + hash.toLowerCase());
+  }
   /** No signing, quote, payment, or other mutation methods until independently verified. */
 }

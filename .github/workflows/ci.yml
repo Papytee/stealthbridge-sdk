@@ -1,9 +1,9 @@
-name: SDK build
+name: SDK validation
 on: [push, pull_request]
 permissions:
   contents: read
 jobs:
-  types:
+  test:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
@@ -12,4 +12,4 @@ jobs:
           node-version: "22"
       - run: npm install --no-audit --no-fund
       - run: npm run typecheck
-      - run: npm run build
+      - run: npm test

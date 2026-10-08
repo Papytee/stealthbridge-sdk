@@ -38,3 +38,13 @@ export interface SettlementSummary {
   chain_transaction_hash?: string;
   payout_reference?: string;
 }
+
+/** Public transaction inclusion status only. Never includes ledger XDR or private transfer details. */
+export interface TransactionObservation {
+  hash: string;
+  status: "SUCCESS" | "FAILED";
+  ledger: number;
+  closed_at_unix: string;
+  latest_ledger: number;
+  source: "stellar-rpc";
+}
