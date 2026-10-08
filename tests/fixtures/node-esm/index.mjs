@@ -1,5 +1,5 @@
 import assert from "node:assert/strict";
-import { ApiError, StealthBridgeClient } from "@stealthbridge/sdk";
+import { ApiError, StealthBridgeClient, AssetAmount, AmountError, assertAsset, ManifestError, parseDeploymentManifest, getVerifiedContract } from "@stealthbridge/sdk";
 
 const hash = "0123456789abcdef".repeat(4);
 const responses = {
@@ -52,8 +52,14 @@ assert.equal((await client.transaction(hash)).status, "SUCCESS");
 assert.deepEqual(requested.map(([path]) => path), Object.keys(responses));
 assert.equal(new ApiError(503, "/health").status, 503);
 assert.deepEqual(Object.keys(await import("@stealthbridge/sdk")).sort(), [
+  "AmountError",
   "ApiError",
-  "StealthBridgeClient"
+  "AssetAmount",
+  "ManifestError",
+  "StealthBridgeClient",
+  "assertAsset",
+  "getVerifiedContract",
+  "parseDeploymentManifest"
 ]);
 
 console.log("Node ESM consumer imported and exercised all read-only methods");

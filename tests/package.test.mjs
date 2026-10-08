@@ -15,6 +15,8 @@ const expectedPackageFiles = [
   "README.md",
   "dist/amount.d.ts",
   "dist/amount.js",
+  "dist/manifest.d.ts",
+  "dist/manifest.js",
   "dist/client.d.ts",
   "dist/client.js",
   "dist/index.d.ts",
@@ -24,8 +26,8 @@ const expectedPackageFiles = [
   "package.json"
 ];
 const budgets = {
-  packedBytes: 22_000,
-  unpackedBytes: 53_000,
+  packedBytes: 28_000,
+  unpackedBytes: 68_000,
   fullBrowserBytes: 3_000,
   treeShakenBrowserBytes: 1_000,
   nextClientSdkChunksBytes: 25_000

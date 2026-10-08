@@ -72,3 +72,7 @@ console.log(total.format(), total.minorUnits.toString());
 ```
 
 This is a *pure amount utility*, not a conversion rate or transfer feature. It rejects floating-point inputs, ambiguous decimal strings, unsupported precision, negative values and cross-asset operations. Asset identity/decimals **must be verified from real chain/issuer metadata**; never assume precision or trusted issuer from this helper. Bigints serialize explicitly to minor-unit strings.
+
+## Verified contract manifest parsing
+
+Use `parseDeploymentManifest(input)` and `getVerifiedContract(manifest,name)` to prevent accidental use of unconfirmed or non-Testnet contract identifiers. Current actual manifest is explicitly `not-deployed` and must **not** be represented as a functioning protocol. This parser checks format and required evidence fields; it does **not** independently prove an on-chain deployment or attest to a token issuer. See `src/manifest.ts`.

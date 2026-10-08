@@ -33,3 +33,7 @@ These checks establish packaging compatibility, not production readiness, backen
 The backend OpenAPI v0.3 defines `GET /v1/transactions/{hash}` for a user-supplied 64-character hex hash. The TypeScript client now exposes `transaction(hash)` returning `TransactionObservation` with status SUCCESS/FAILED, ledger and RPC source; 404 means not present in the node's retained history, **not** proof the transaction never existed. We intentionally omit raw envelope/result XDR, events and confidential payment data. Tests run offline with synthetic mocked fetch responses only.
 
 The backend also includes a tenant-scoped internal intent journal (`src/store.rs`) but **there is no public authenticated mutation endpoint or SDK write method**. Preserve this boundary until wallet auth, proof verification, FX and payout reconciliation are independently implemented.
+
+### Contract artifact resolution
+
+Only schema version 1 and `network=testnet` are recognized. The current contracts manifest declares `not-deployed`. Only explicitly verified, deployment-shaped manifests can resolve a contract name. This local validation is not independent network attestation; consumers must still verify contract IDs, code hashes and source provenance against Stellar.
