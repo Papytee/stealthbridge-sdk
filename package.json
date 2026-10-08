@@ -10,18 +10,23 @@
   "exports": {
     ".": {
       "types": "./dist/index.d.ts",
+      "import": "./dist/index.js",
       "default": "./dist/index.js"
     }
   },
+  "sideEffects": false,
   "files": [
     "dist"
   ],
   "scripts": {
     "build": "tsc -p tsconfig.json",
     "typecheck": "tsc -p tsconfig.json --noEmit",
-    "test": "npm run build && node --test tests/*.test.mjs"
+    "test": "npm run build && node --test --test-concurrency=1 tests/*.test.mjs",
+    "test:package": "npm run build && node --test --test-concurrency=1 tests/package.test.mjs",
+    "verify": "npm run typecheck && npm test"
   },
   "devDependencies": {
+    "esbuild": "0.28.2",
     "typescript": "^7.0.0"
   }
 }

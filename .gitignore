@@ -1,5 +1,7 @@
 node_modules/
 dist/
+artifacts/
+tests/fixtures/next-app/vendor/
 .env
 .env.*
 !.env.example
