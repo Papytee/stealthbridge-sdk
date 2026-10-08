@@ -26,3 +26,12 @@ npm install
 npm run typecheck
 npm run build
 ```
+
+## On-chain observation, without leaking contract events
+
+```ts
+const observed = await client.transaction(realTransactionHash); // exact 64-hex hash
+console.log(observed.status, observed.ledger);
+```
+
+The result verifies **chain inclusion only**. It does not prove private-payment anonymity, bank payout or token redemption; older hashes may be unavailable from RPC retention. The SDK has offline tests for URL restrictions, malformed hashes, missing transactions and safe read-only behavior. See [the engineering roadmap](ROADMAP.md).
