@@ -1,0 +1,5 @@
+{
+  "name": "stealthbridge-browser-consumer",
+  "private": true,
+  "type": "module"
+}

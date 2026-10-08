@@ -1,0 +1,5 @@
+{
+  "name": "stealthbridge-node-esm-consumer",
+  "private": true,
+  "type": "module"
+}
