@@ -2,6 +2,8 @@
 
 # StealthBridge SDK
 
+**Engineering roadmap:** [View the repository-specific plan](ROADMAP.md).
+
 An initial **read-only TypeScript SDK** for live StealthBridge network and corridor metadata.
 
 ```ts
