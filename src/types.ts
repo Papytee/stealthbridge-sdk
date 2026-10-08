@@ -1,4 +1,4 @@
-/** Public, non-sensitive API models. Confidential notes and witness data are intentionally excluded. */
+/** Public ledger and corridor models; not a home for payment witnesses or personal data. */
 export type Network = "testnet";
 export type PrivacyRail = "confidential-token" | "private-payments";
 export type SettlementState =
@@ -6,17 +6,29 @@ export type SettlementState =
   | "chain_finalized" | "payout_pending" | "payout_completed"
   | "expired" | "rejected" | "chain_failed" | "payout_failed"
   | "refund_pending" | "refunded" | "manual_review";
+
 export interface Capabilities {
   payments_enabled: boolean;
-  privacy_integration_verified: boolean;
+  confidential_token_verified: boolean;
+  private_payments_verified: boolean;
   fiat_payouts_enabled: boolean;
+}
+export interface NetworkStatus {
+  network: Network;
+  passphrase: string;
+  protocol_version: number;
+  ledger_sequence: number;
+  ledger_closed_at_unix: string;
+  ledger_hash: string;
+  source: "stellar-rpc";
 }
 export interface Corridor {
   id: string;
-  from: string;
-  to: string;
-  settlement_asset: string;
-  simulation: boolean;
+  origin_country: string;
+  destination_country: string;
+  asset_code: string;
+  asset_issuer: string | null;
+  privacy_rail: PrivacyRail;
 }
 export interface SettlementSummary {
   id: string;
@@ -26,5 +38,3 @@ export interface SettlementSummary {
   chain_transaction_hash?: string;
   payout_reference?: string;
 }
-/** Do not represent unverified simulation quotes as executable commercial offers. */
-export interface DemoQuote { corridor_id: string; send_amount_decimal: string; simulation: true; }
