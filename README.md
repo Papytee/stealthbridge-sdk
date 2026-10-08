@@ -1,3 +1,5 @@
+<div align="center"><img src="assets/stealthbridge-logo.svg" alt="StealthBridge — Confidential payments. Without borders." width="540" /></div>
+
 # StealthBridge SDK
 
 An initial **read-only TypeScript SDK** for live StealthBridge network and corridor metadata.
